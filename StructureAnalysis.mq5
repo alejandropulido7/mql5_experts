@@ -14,11 +14,11 @@ struct Structure {
    ENUM_TIMEFRAMES period;
    double highestPoint;
    double lowestPoint;
-   int highestIndex;
-   int lowestIndex;
+   int index;
    int direction; //1: bullish, 0: bearish, -1: consolidate
 };
-Structure StructuresArray[];
+
+Structure StructuresArray1[];
 datetime lastProcessedTime = 0;
 int highIndexes[];
 int lowIndexes[];
@@ -104,35 +104,36 @@ bool validateStructureByPreviousCandles(int candleIndex, ENUM_TIMEFRAMES tf){
    return false;
 }
 
+/*
 void DrawStructure(){
    Print(ArraySize(StructuresArray));
 
    for (int i = 0; i < ArraySize(StructuresArray); i++) {
    
-      Print(i+": High("+StructuresArray[i].highestIndex+") Low("+StructuresArray[i].lowestIndex+")");
+      Print(i+": High("+StructuresArray[i].highestIndex+") Low("+StructuresArray1[i].lowestIndex+")");
       string highLineName = "STRUCT_HIGH_" + IntegerToString(i);
       string lowLineName = "STRUCT_LOW_" + IntegerToString(i);
       
-      datetime lowerTime = iTime(_Symbol, StructuresArray[i].period, StructuresArray[i].lowestIndex);
+      datetime lowerTime = iTime(_Symbol, StructuresArray[i].period, StructuresArray1[i].lowestIndex);
       ObjectCreate(0, lowLineName, OBJ_ARROW, 0, lowerTime, StructuresArray[i].lowestPoint);
       ObjectSetInteger(0, lowLineName, OBJPROP_ARROWCODE, 233);
       ObjectSetInteger(0, lowLineName, OBJPROP_COLOR, clrBlue);
       ObjectSetInteger(0, lowLineName, OBJPROP_WIDTH, 2);
       ObjectSetInteger(0, lowLineName, OBJPROP_STYLE, STYLE_SOLID);
       
-      datetime higherTime = iTime(_Symbol, StructuresArray[i].period, StructuresArray[i].highestIndex);
+      datetime higherTime = iTime(_Symbol, StructuresArray1[i].period, StructuresArray1[i].highestIndex);
       ObjectCreate(0, highLineName, OBJ_ARROW, 0, higherTime, StructuresArray[i].highestPoint);
       ObjectSetInteger(0, highLineName, OBJPROP_ARROWCODE, 234);
       ObjectSetInteger(0, highLineName, OBJPROP_COLOR, clrOrange);
       ObjectSetInteger(0, highLineName, OBJPROP_WIDTH, 2);
       ObjectSetInteger(0, highLineName, OBJPROP_STYLE, STYLE_SOLID);
      }
-}
+}*/
 
 // Marca estructura: swing high y swing low con flechas
 void MarcarEstructura(ENUM_TIMEFRAMES tf, int lookback = 300) {
-   ArrayResize(lowIndexes, lookback);
-   ArrayResize(highIndexes, lookback);
+   ArrayResize(StructuresArray1, 0);
+   
    for (int i = 1; i < lookback; i++) {
       //--- Datos vela actual y previas
       double open_i     = iOpen(_Symbol, tf, i);
@@ -177,7 +178,32 @@ void MarcarEstructura(ENUM_TIMEFRAMES tf, int lookback = 300) {
          ObjectSetInteger(0, name, OBJPROP_ARROWCODE, 233); // Flecha arriba
          ObjectSetInteger(0, name, OBJPROP_COLOR, clrGreen);
          
-         lowIndexes[i] = i; 
+         ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
+          
+         if(ArraySize(StructuresArray1) == 0)
+           {
+            ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
+            StructuresArray1[i].period = tf;
+            StructuresArray1[i].highestPoint = high_i;
+            StructuresArray1[i].lowestPoint = low_i;
+            StructuresArray1[i].index = i;
+            StructuresArray1[i].direction = 0;
+           }
+           else {
+            int previousIndex = i - 1;
+            int insertIndex = i;
+            if(StructuresArray1[previousIndex].index == 0){
+               insertIndex = previousIndex;
+            } else
+             {
+              ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
+             }
+            StructuresArray1[insertIndex].period = tf;
+            StructuresArray1[insertIndex].highestPoint = high_i;
+            StructuresArray1[insertIndex].lowestPoint = low_i;
+            StructuresArray1[insertIndex].index = i;
+            StructuresArray1[insertIndex].direction = 0;
+           }
       }
 
       if (
