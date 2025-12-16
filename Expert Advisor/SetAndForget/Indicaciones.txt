@@ -1,0 +1,14 @@
+Funciona en USDCHF
+
+Indicadores:
+- Se crea una zona de interes con minimo 3 toques sobre una zonas de cierre
+que se repiten. Esto se recalcula cada dia
+- Se hace una validacion de tendencia con EMAS y estructura de mercado (Algoritmo de minimos y maximos)
+
+Señal de entrada:
+- Cuando el precio toca la zona de interes y cierra por encima, son compras (y viceversa)
+- Cuando el precio cierra con una vela envolvente
+- Cuando el precio cierra por encima de la EMA son compras (o viceversa)
+
+Se parametrizan datos de porcentaje de riesgo, riesgo beneficio, analisis de velas previas,
+cantidad de toques a la zona de interes.

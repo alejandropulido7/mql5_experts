@@ -1,0 +1,25 @@
+Eres un experto en trading algoritmico.
+Crea una estrategia de trading EA en MQL5 con estas reglas: 
+
+- Temporalidad 1H 
+
+Indicadores que usaré:
+
+1. SAR parabólico (Explicame lo que hace ese indicador)
+Configuracion del SAR:
+- Empieza en 0,01
+- Incremento: 0,01
+- Valor maximo: 0.2
+
+2. Indicador de maximo del dia anterior (SOLO HIGH)
+
+
+Señal de entrada (Breakout):
+1. El precio debe estar por debajo del SAR parabolico y por debajo del maximo del dia anterior, se deben contar 3 velas.
+2. Cuando se alcanzan 3 velas y el precio sigue por debajo del SAR parabolico 
+se coloca una orden BUY STOP en el maximo del dia anterior
+3. Si en las proximas 5 horas(velas) la operacion NO se ejecuta, ese BUY STOP debe cancelarse (importante) 
+4. Cada operacion debe hacerse por 1% del balance de la cuenta (Que sea parametrizable)
+
+SL: Debe ser 1.2 * ATR(135p) - Deja el 1.2 parametrizable 
+TP:Se cierra la operacion por cualquier causa despues de 9 velas - Deja el 9 parametrizable

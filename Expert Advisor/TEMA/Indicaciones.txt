@@ -1,0 +1,14 @@
+Eres un experto en trading algoritmico.
+Crea una estrategia de trading EA en MQL5 con estas reglas: 
+- Temporalidad 1H 
+
+Señal de entrada (SOLO COMPRAS): 
+Cuando el cierre de vela esté por debajo de una TEMA de 8 periodos (Parametrizable) 
+coloco una orden de BUY STOP en el maximo mas alto de las ultimas 50 velas (Parametrizable). 
+Si despues de 5 velas (Parametrizable) el precio no ha entrado en el BUY STOP NO entras 
+a la operacion y se uelve a recalcular la entrada.
+
+
+SL: Debe ser 1.2 * ATR(150p) - Deja el 1.2 parametrizable 
+TP: Debe ser 5 * ATR(150p) - Deja el 5 paramerizable 
+Se cierra la operacion por cualquier causa despues de 7 velas - Deja el 7 parametrizable
