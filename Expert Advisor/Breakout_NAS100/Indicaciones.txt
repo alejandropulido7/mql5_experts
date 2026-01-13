@@ -1,0 +1,15 @@
+Modifica el EA:
+
+Ya no usaremos el BUY STOP ni SELL STOP. En lugar de eso, entraremos a MERCADO exactamente a las 9:30, es decir cuando cierra la vela de 15M de las 9:15. Seguimos con la misma logica: Se entra en compra cuando el precio esta por debajo del SAR y viceversa.
+
+
+
+Para el SL ya no usaremos el ATR, sino que vas a poner el SL en el maximo o minimo del cierre de la vela de 9:15 con un buffer de 10 puntos parametrizables. 
+
+
+
+Te mucho cuidado con esto:
+
+- La validacion del SAR que son 3 velas cerradas por debajo o por encima del SAR, SE VALIDA entre las 8:00 y 9:00 AM, es decir que en ese horario NO se toman operaciones, no pueden haber operaciones a las 8:00 AM porque desde esa hora apenas empieza a validar el SAR.
+
+- La operacion se cierra por cualquier motivo despues de 8 velas de 15M o hasta que llege al TP, lo que ocurra primero
