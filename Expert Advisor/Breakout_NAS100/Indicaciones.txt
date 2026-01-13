@@ -1,3 +1,45 @@
+
+Crea una estrategia de trading EA en MQL5 con estas reglas: 
+- Temporalidad 15M
+
+Indicadores que usaré:
+
+1. SAR parabólico
+Configuracion del SAR:
+- Empieza en 0,05
+- Incremento: 0,02
+- Valor maximo: 1
+
+2. Maximo o minimo de las 10 velas anteriores (parametrizable)
+
+Mercado: Indice Nasdaq 100
+
+Señal de entrada (Breakout):
+1. Entre las 8:00 AM y 9:00 AM (hora Nueva york) el precio debe estar por debajo (Para compras) o por encima (Para ventas) del SAR parabolico y se deben contar 3 puntos del SAR.
+
+2. Cuando se alcanzan 3 puntos del SAR (Importante: entre la hora de 8 y 9) y el precio sigue por debajo del SAR parabolico se coloca una orden BUY STOP o SELL STOP (Dependiendo del SAR) en el maximo o minimo de las 10 velas anteriores (dependiendo del SAR)
+
+3. Cada operacion debe arriesgar 1% del balance de la cuenta (Parametrizable)
+
+SL: Debe ser 1.2 * ATR(135p) - Deja el 1.2 parametrizable 
+TP: Se cierra la operacion con riesgo beneficio 1:2 (parametrizable)
+El ATR se calcula en el momento de poner el BUY STOP o SELL STOP.
+
+
+
+Inconveniente: Se que en marzo (creo) el horario cambia en new york, es decir que el horario de apertura disminuye 1 hora y en octubre (creo) se vuelve a subir 1 hora. Como se puede configurar el EA teniendo en cuenta esto? o en realidad no afecta?
+
+Es importante para la estrategia porque entre las 8:00 y 9:00 AM es la preapertura de NY.
+
+
+
+
+
+
+
+
+Probar modificacion:
+
 Modifica el EA:
 
 Ya no usaremos el BUY STOP ni SELL STOP. En lugar de eso, entraremos a MERCADO exactamente a las 9:30, es decir cuando cierra la vela de 15M de las 9:15. Seguimos con la misma logica: Se entra en compra cuando el precio esta por debajo del SAR y viceversa.
