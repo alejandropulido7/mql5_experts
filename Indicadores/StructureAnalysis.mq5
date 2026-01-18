@@ -7,8 +7,11 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #property indicator_chart_window
+#property indicator_plots   2
+#property indicator_buffers 2
 
 input int amountPreviousCandleStructure = 2;
+input int lookBack = 300; //Cantidad de velas a analizar
 
 struct Structure {
    ENUM_TIMEFRAMES period;
@@ -58,7 +61,7 @@ int OnCalculate(const int32_t rates_total,
    ClearObjets();
    //DetectarEstructura(PERIOD_H4, 300);
    //DrawStructure();
-   MarcarEstructura(PERIOD_H4);
+   MarcarEstructura(_Period);
    return(rates_total);
   }
   
@@ -131,10 +134,10 @@ void DrawStructure(){
 }*/
 
 // Marca estructura: swing high y swing low con flechas
-void MarcarEstructura(ENUM_TIMEFRAMES tf, int lookback = 300) {
+void MarcarEstructura(ENUM_TIMEFRAMES tf) {
    ArrayResize(StructuresArray1, 0);
    
-   for (int i = 1; i < lookback; i++) {
+   for (int i = 1; i < lookBack; i++) {
       //--- Datos vela actual y previas
       double open_i     = iOpen(_Symbol, tf, i);
       double close_i    = iClose(_Symbol, tf, i);
@@ -148,9 +151,8 @@ void MarcarEstructura(ENUM_TIMEFRAMES tf, int lookback = 300) {
       
       double close_ia1  = iClose(_Symbol, tf, i-1);
       double open_ia1   = iOpen(_Symbol, tf, i-1);
-      double close_ia2  = iClose(_Symbol, tf, i-2);
-      double open_ia2   = iOpen(_Symbol, tf, i-2);
-
+      double close_ia2 = iClose(_Symbol, tf, i-2);
+      double open_ia2 = iOpen(_Symbol, tf, i-2);
 
       //--- Swing Low: 2 bajistas previas, actual alcista
       bool prev1_bearish = (close_ip1 < open_ip1);
@@ -170,53 +172,62 @@ void MarcarEstructura(ENUM_TIMEFRAMES tf, int lookback = 300) {
       bool isBearishEngulfingAfter = (open_i < close_ia1) && (curr_bullish && prev1_bullish && after1_bearish);
       
       if (
-            //(curr_bullish && prev1_bearish && prev2_bearish && after1_bullish) || 
-            (curr_bullish && prev1_bearish && after1_bullish && after2_bullish) || 
+            (curr_bullish && prev1_bearish && prev2_bearish) || 
+            (curr_bullish && prev1_bearish && after1_bullish) || 
             isBullishEngulfingAfter) {
          string name = "SWING_LOW_" + IntegerToString(i);
          ObjectCreate(0, name, OBJ_ARROW, 0, iTime(_Symbol, tf, i), low_i - 5 * _Point);
          ObjectSetInteger(0, name, OBJPROP_ARROWCODE, 233); // Flecha arriba
          ObjectSetInteger(0, name, OBJPROP_COLOR, clrGreen);
          
-         ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
-          
-         if(ArraySize(StructuresArray1) == 0)
-           {
-            ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
-            StructuresArray1[i].period = tf;
-            StructuresArray1[i].highestPoint = high_i;
-            StructuresArray1[i].lowestPoint = low_i;
-            StructuresArray1[i].index = i;
-            StructuresArray1[i].direction = 0;
-           }
-           else {
-            int previousIndex = i - 1;
-            int insertIndex = i;
-            if(StructuresArray1[previousIndex].index == 0){
-               insertIndex = previousIndex;
-            } else
-             {
-              ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
-             }
-            StructuresArray1[insertIndex].period = tf;
-            StructuresArray1[insertIndex].highestPoint = high_i;
-            StructuresArray1[insertIndex].lowestPoint = low_i;
-            StructuresArray1[insertIndex].index = i;
-            StructuresArray1[insertIndex].direction = 0;
-           }
+//         ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
+//          
+//         if(ArraySize(StructuresArray1) == 0)
+//           {
+//            ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
+//            StructuresArray1[i].period = tf;
+//            StructuresArray1[i].highestPoint = high_i;
+//            StructuresArray1[i].lowestPoint = low_i;
+//            StructuresArray1[i].index = i;
+//            StructuresArray1[i].direction = 0;
+//           }
+//           else {
+//            int previousIndex = i - 1;
+//            int insertIndex = i;
+//            if(StructuresArray1[previousIndex].index == 0){
+//               insertIndex = previousIndex;
+//            } else
+//             {
+//              ArrayResize(StructuresArray1, ArraySize(StructuresArray1) + 1);
+//             }
+//            StructuresArray1[insertIndex].period = tf;
+//            StructuresArray1[insertIndex].highestPoint = high_i;
+//            StructuresArray1[insertIndex].lowestPoint = low_i;
+//            StructuresArray1[insertIndex].index = i;
+//            StructuresArray1[insertIndex].direction = 0;
+//           }
+      } else if (
+            (curr_bearish && prev1_bullish && prev2_bullish) || 
+            (curr_bearish && prev1_bullish && after1_bearish) ||
+            isBearishEngulfingAfter){
+               string name = "SWING_HIGH_" + IntegerToString(i);
+               ObjectCreate(0, name, OBJ_ARROW, 0, iTime(_Symbol, tf, i), high_i + 5 * _Point);
+               ObjectSetInteger(0, name, OBJPROP_ARROWCODE, 234); // Flecha abajo
+               ObjectSetInteger(0, name, OBJPROP_COLOR, clrRed);
+      
       }
 
-      if (
-            //(curr_bearish && prev1_bullish && prev2_bullish && after1_bearish) || 
-            (curr_bearish && prev1_bullish && after1_bearish && after2_bearish) ||
-            isBearishEngulfingAfter) {
-         string name = "SWING_HIGH_" + IntegerToString(i);
-         ObjectCreate(0, name, OBJ_ARROW, 0, iTime(_Symbol, tf, i), high_i + 5 * _Point);
-         ObjectSetInteger(0, name, OBJPROP_ARROWCODE, 234); // Flecha abajo
-         ObjectSetInteger(0, name, OBJPROP_COLOR, clrRed);
-         
-         highIndexes[i] = i;
-      }
+//      if (
+//            (curr_bearish && prev1_bullish && prev2_bullish && after1_bearish) || 
+//            (curr_bearish && prev1_bullish && after1_bearish && after2_bearish) ||
+//            isBearishEngulfingAfter) {
+//         string name = "SWING_HIGH_" + IntegerToString(i);
+//         ObjectCreate(0, name, OBJ_ARROW, 0, iTime(_Symbol, tf, i), high_i + 5 * _Point);
+//         ObjectSetInteger(0, name, OBJPROP_ARROWCODE, 234); // Flecha abajo
+//         ObjectSetInteger(0, name, OBJPROP_COLOR, clrRed);
+//         
+//         highIndexes[i] = i;
+//      }
    }
    //Recorrer los lowIndexes y validar si entre i y i+1 hay mas de un highIndex, si lo hay, dejar el mas high y borrar el otro
 }
