@@ -1,0 +1,8 @@
+MetaTrader5
+Flask
+waitress
+requests
+pandas
+pytz
+psutil
+pyinstaller
