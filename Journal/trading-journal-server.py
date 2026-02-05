@@ -6,6 +6,8 @@ import pandas as pd
 import psutil
 import time
 from waitress import serve
+from functools import wraps
+import os
 
 # --- CONFIGURACIÓN ---
 PATH_MT5 = r"C:\Program Files\MT5-history\terminal64.exe"
@@ -14,17 +16,57 @@ PROCESS_NAME = "terminal64.exe"
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - API - %(message)s')
 
+API_KEY_SECRET = os.getenv("MT5_API_KEY", "clave123")
+
+def require_api_key(f):
+    """
+    Decorador que verifica que la petición tenga el header X-API-KEY correcto.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 1. Buscar la key en los headers
+        token = request.headers.get('X-API-KEY')
+        
+        # 2. Validar
+        if not token or token != API_KEY_SECRET:
+            logging.warning(f"⛔ Intento de acceso no autorizado desde {request.remote_addr}")
+            return jsonify({"status": "error", "message": "Acceso Denegado: API Key inválida o faltante"}), 401
+        
+        # 3. Si pasa, ejecutar la función original
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- UTILIDADES DE SISTEMA ---
 def force_kill_mt5():
-    """Mata el proceso forzosamente para limpiar estados corruptos."""
-    logging.warning("⚠️ KILL SWITCH: Matando procesos de MT5...")
-    for proc in psutil.process_iter(['pid', 'name']):
+    """
+    Mata SOLAMENTE la instancia de MT5 que corre desde PATH_MT5.
+    Respeta otras instancias de otros robots.
+    """
+    # Normalizamos la ruta objetivo (minúsculas y slashes correctos)
+    target_path = os.path.normpath(PATH_MT5).lower()
+    
+    logging.warning(f"⚠️ Buscando procesos para matar en: {target_path}")
+    
+    # Iteramos pidiendo el atributo 'exe' (ruta del ejecutable)
+    for proc in psutil.process_iter(['pid', 'name', 'exe']):
         try:
+            # Filtro 1: Nombre del proceso
             if proc.info['name'] == PROCESS_NAME:
-                proc.kill()
-        except:
+                # Filtro 2: Ruta exacta
+                if proc.info['exe']:
+                    current_path = os.path.normpath(proc.info['exe']).lower()
+                    
+                    if current_path == target_path:
+                        logging.warning(f"🔫 Matando instancia específica PID {proc.info['pid']}...")
+                        proc.kill()
+                    else:
+                        # Log opcional para depuración
+                        # logging.info(f"Ignorando instancia MT5 ajena en: {current_path}")
+                        pass
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
-    time.sleep(2) # Tiempo para liberar el archivo .exe
+    
+    time.sleep(2)
 
 def wait_for_connection(max_retries=10):
     """Verifica conexión real a internet/broker."""
@@ -180,6 +222,7 @@ def fetch_trades_for_account(login, password, server, last_sync_date_str):
 
 # --- ENDPOINT API ---
 @app.route('/api/sync-trades', methods=['POST'])
+@require_api_key
 def sync_handler():
     req_data = request.json
     if not req_data or 'accounts' not in req_data:
@@ -206,6 +249,7 @@ def sync_handler():
             if trades:
                 all_results.extend(trades)
                 logging.info(f" -> {len(trades)} nuevos trades.")
+        force_kill_mt5()
     
     except Exception as e:
         logging.error(f"🔥 Error Fatal: {e}")
