@@ -1,0 +1,26 @@
+Para probar el script desde consola:
+
+1. Ejecutar el script main_api.py en un entorno python (venv). 
+Comando para activar el entorno ".venv\Scripts\activate"
+
+2. Validar que el icono se muestra al lado del reloj
+
+
+Generar instalador .exe
+
+1. Descargar Inno Setop Compiler (https://jrsoftware.org/isdl.php)
+
+2. Colocar el script main_api.py y el icono (icon.ico) dentro del entorno de python (venv)
+
+3. Dentro de la ruta raiz donde se encuentra el script main_api.py, ejecutar el comando en consola:
+pyinstaller --noconsole --onefile --icon="icon.ico" --add-data "icon.ico;." --name="MT5_API_Service" main_api.py
+
+4. Se genera el .exe en la carpeta dist. Copiarlo y pegarlo en una carpeta aparte para
+generar el asistente de instalacion
+
+5. Dentro de la nueva carpeta debe estar el archivo generado (.exe), el icono (.ico)
+y el archivo de configuracion del asistente (.iss)
+
+6. Abrir el archivo .iss con "Inno Setup" y ejecutarlo (Run)
+
+7. Se genera el instalador .exe final.
