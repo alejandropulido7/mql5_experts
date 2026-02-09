@@ -27,7 +27,8 @@ def load_config():
     
     # Valores por defecto
     default_config = {
-        "mt5_path": r"C:\Program Files\MT5-Terminal\terminal64.exe",
+        #"mt5_path": r"C:\Program Files\MT5-history\terminal64.exe",
+        "mt5_path": r"C:\Users\Administrator\Documents\MT5-portable\terminal64.exe",
         "port": 5000,
         "api_key": "clave_default_dev"
     }
@@ -193,14 +194,24 @@ def get_account_financials(login_id):
     }
 
 def fetch_trades_for_account(login, password, server, last_sync_date_str):
-    # 1. INTENTO DE LOGIN
-    if not mt5.login(login=int(login), password=password, server=server):
-        # CAPTURAMOS EL ERROR EXACTO DEL BROKER
-        err_code, err_msg = mt5.last_error()
-        full_error = f"Login Failed: {err_msg} (Verify connection data)"
-        logging.error(f"❌ Error en cuenta {login}: {full_error}")
+    # Comprobamos si hay conexión IPC con el terminal
+    if not mt5.terminal_info():
+        logging.info(f"⚠️ MT5 no detectado. Intentando iniciar para cuenta {login}...")
         
-        # Retornamos Error explícito
+        # Intentamos inicializar.
+        if not mt5.initialize(path=PATH_MT5, login=int(login), password=password, server=server, portable=False):
+            err_code, err_msg = mt5.last_error()
+            return None, None, f"FATAL: No se pudo iniciar MT5. Error: {err_msg}"
+        
+        logging.info("✅ MT5 Iniciado correctamente.")
+        time.sleep(2)
+
+    # --- 1. INTENTO DE LOGIN ---
+    # Si MT5 ya estaba abierto, hacemos switch de cuenta
+    if not mt5.login(login=int(login), password=password, server=server):
+        err_code, err_msg = mt5.last_error()
+        full_error = f"Login Failed: {err_msg} (Verify credentials/server)"
+        logging.error(f"❌ Error en cuenta {login}: {full_error}")
         return None, None, full_error
 
     # 2. VERIFICAR CONEXIÓN (Doble chequeo)
@@ -218,7 +229,7 @@ def fetch_trades_for_account(login, password, server, last_sync_date_str):
     except ValueError:
         limit_date_dt = datetime(2020, 1, 1)
 
-    req_from = datetime.now() - timedelta(days=30)
+    req_from = limit_date_dt - timedelta(days=2)
     req_to = datetime.now() + timedelta(days=1)
     
     deals = get_deals_with_retry(req_from, req_to)
@@ -263,23 +274,14 @@ def sync_handler():
     if not req_data or 'accounts' not in req_data:
         return jsonify({"status": "error", "message": "Payload inválido"}), 400
 
-    last_sync = req_data.get('last_sync_date', '2000-01-01 00:00:00')
+    #last_sync = req_data.get('last_sync_date', '2000-01-01 00:00:00')
     response_data_list = []
-
-    # --- PROTECCIÓN CONTRA CUENTA MAESTRA INVÁLIDA ---
-    master_acc = req_data['accounts'][0]
-    
-    # Si la cuenta maestra falla al arrancar, NO crasheamos todo el proceso.
-    # Intentamos arrancarlo, pero si ensure_mt5_is_ready devuelve False, 
-    # asumimos que MT5 abrió pero tal vez no conectó esa cuenta específica.
-    # Dejamos que el bucle intente procesar las cuentas una por una.
-    if not ensure_mt5_is_ready(master_acc):
-        logging.warning("⚠️ Alerta: La cuenta maestra tuvo problemas al iniciar MT5. Se intentará procesar individualmente.")
-        # No hacemos return 500 aquí, dejamos continuar para ver si mt5.login captura el error específico.
 
     try:
         for acc in req_data['accounts']:
             logging.info(f"🔄 Procesando: {acc['login']}")
+
+            last_sync = acc.get('last_sync_date', '2000-01-01 00:00:00')
             
             # Desempaquetamos los 3 valores
             trades, finance_data, error_msg = fetch_trades_for_account(
@@ -316,6 +318,7 @@ def sync_handler():
         force_kill_specific_mt5() 
         return jsonify({"status": "fatal_error", "message": str(e)}), 500
 
+    force_kill_specific_mt5()
     return jsonify({
         "status": "success", 
         "data": response_data_list
