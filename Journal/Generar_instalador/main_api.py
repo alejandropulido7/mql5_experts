@@ -229,8 +229,8 @@ def fetch_trades_for_account(login, password, server, last_sync_date_str):
     except ValueError:
         limit_date_dt = datetime(2020, 1, 1)
 
-    req_from = limit_date_dt - timedelta(days=2)
-    req_to = datetime.now() + timedelta(days=1)
+    req_from = limit_date_dt - timedelta(days=1)
+    req_to = datetime.now() + timedelta(days=2)
     
     deals = get_deals_with_retry(req_from, req_to)
     
@@ -281,6 +281,7 @@ def sync_handler():
         for acc in req_data['accounts']:
             logging.info(f"🔄 Procesando: {acc['login']}")
 
+            time.sleep(2)
             last_sync = acc.get('last_sync_date', '2000-01-01 00:00:00')
             
             # Desempaquetamos los 3 valores
